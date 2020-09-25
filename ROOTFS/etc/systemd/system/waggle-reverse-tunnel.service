@@ -1,0 +1,10 @@
+[Unit]
+Description=Waggle Reverse Tunnel
+
+[Service]
+Restart=always
+RestartSec=3min
+ExecStart=/usr/bin/waggle-reverse-tunnel
+
+[Install]
+WantedBy=multi-user.target

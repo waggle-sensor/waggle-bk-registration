@@ -1,0 +1,10 @@
+[Unit]
+Description=Waggle Registration
+
+[Service]
+Restart=always
+RestartSec=3min
+ExecStart=/usr/bin/waggle-registration
+
+[Install]
+WantedBy=multi-user.target
