@@ -1,0 +1,9 @@
+#!/bin/bash
+
+case "${1}" in
+  configure)
+    echo "Enabling & starting waggle-reverse-tunnel service"
+    systemctl enable waggle-reverse-tunnel.service
+    systemctl start waggle-reverse-tunnel.service || true
+    ;;
+esac
