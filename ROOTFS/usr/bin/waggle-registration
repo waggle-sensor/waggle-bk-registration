@@ -166,8 +166,9 @@ def get_hostname():
 def get_certificates():
     logger.info('Getting credentials from %s.', cert_server)
 
+    # assumes eno1 is primary network interface
     node_id = Path(
-        '/sys/class/efuse/mac').read_text().strip().replace(':', '').rjust(16, '0')
+        '/sys/class/net/eno1/address').read_text().strip().replace(':', '').rjust(16, '0')
 
     required_files = [
         ca_root_file,
@@ -198,7 +199,7 @@ def get_certificates():
         write_file(token_path, node_info['token'])
 
     os.remove(registration_key)
-    logger.info('Registration complete.')
+    logger.info('Registration complete')
 
 
 def main():
