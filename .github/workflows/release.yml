@@ -17,8 +17,8 @@ jobs:
         id: build_project
         run: |
           ./release.sh
-          echo "##[set-output name=deb_reg;]$(ls waggle-registration*.deb)"
-          echo "##[set-output name=deb_reverse;]$(ls waggle-reverse-tunnel*.deb)"
+          echo "##[set-output name=deb_reg;]$(ls sagebk-registration*.deb)"
+          echo "##[set-output name=deb_reverse;]$(ls sagebk-reverse-tunnel*.deb)"
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

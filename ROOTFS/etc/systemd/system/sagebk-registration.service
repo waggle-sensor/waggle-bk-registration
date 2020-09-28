@@ -1,10 +1,10 @@
 [Unit]
-Description=Waggle Reverse Tunnel
+Description=Sage Beekeeper Registration
 
 [Service]
 Restart=always
 RestartSec=3min
-ExecStart=/usr/bin/waggle-reverse-tunnel
+ExecStart=/usr/bin/sagebk-registration
 
 [Install]
 WantedBy=multi-user.target

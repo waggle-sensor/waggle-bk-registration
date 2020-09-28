@@ -1,4 +1,4 @@
 #!/bin/bash
 
-systemctl stop waggle-registration.service || true
-systemctl disable waggle-registration.service || true
+systemctl stop sagebk-registration.service || true
+systemctl disable sagebk-registration.service || true

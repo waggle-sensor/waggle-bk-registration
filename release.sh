@@ -8,7 +8,7 @@ VERSION=${BASE_VERSION}-${GIT_SHA}${DIRTY}
 
 # Build the registration debian package
 BASEDIR=/tmp/reg
-NAME=waggle-registration
+NAME=sagebk-registration
 ARCH=all
 
 mkdir -p ${BASEDIR}/DEBIAN
@@ -26,14 +26,14 @@ cp -p deb/reg/prerm ${BASEDIR}/DEBIAN/
 
 mkdir -p ${BASEDIR}/etc/systemd/system
 mkdir -p ${BASEDIR}/usr/bin
-cp -p ROOTFS/etc/systemd/system/waggle-registration.service ${BASEDIR}/etc/systemd/system/
-cp -p ROOTFS/usr/bin/waggle-registration ${BASEDIR}/usr/bin
+cp -p ROOTFS/etc/systemd/system/sagebk-registration.service ${BASEDIR}/etc/systemd/system/
+cp -p ROOTFS/usr/bin/sagebk-registration ${BASEDIR}/usr/bin
 
 dpkg-deb --root-owner-group --build ${BASEDIR} "${NAME}_${VERSION}_${ARCH}.deb"
 
 # Build the reverse tunnel debian package
 BASEDIR=/tmp/reverse
-NAME=waggle-reverse-tunnel
+NAME=sagebk-reverse-tunnel
 ARCH=all
 
 mkdir -p ${BASEDIR}/DEBIAN
@@ -51,7 +51,7 @@ cp -p deb/reverse/prerm ${BASEDIR}/DEBIAN/
 
 mkdir -p ${BASEDIR}/etc/systemd/system
 mkdir -p ${BASEDIR}/usr/bin
-cp -p ROOTFS/etc/systemd/system/waggle-reverse-tunnel.service ${BASEDIR}/etc/systemd/system/
-cp -p ROOTFS/usr/bin/waggle-reverse-tunnel ${BASEDIR}/usr/bin
+cp -p ROOTFS/etc/systemd/system/sagebk-reverse-tunnel.service ${BASEDIR}/etc/systemd/system/
+cp -p ROOTFS/usr/bin/sagebk-reverse-tunnel ${BASEDIR}/usr/bin
 
 dpkg-deb --root-owner-group --build ${BASEDIR} "${NAME}_${VERSION}_${ARCH}.deb"

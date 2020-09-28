@@ -1,0 +1,7 @@
+#!/bin/bash
+
+HOST=beekeeper
+key_file=/etc/waggle/key.pem
+id=$(</etc/waggle/node-id)
+
+ssh -vv -N  -R /home_dirs/$id/rtun.sock:localhost:22 $id@beekeeper -p 20022 -i /etc/waggle/key.pem

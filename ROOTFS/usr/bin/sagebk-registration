@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+# ANL:waggle-license
+#  This file is part of the Waggle Platform.  Please see the file
+#  LICENSE.waggle.txt for the legal details of the copyright and software
+#  license.  For more details on the Waggle project, visit:
+#           http://www.wa8.gl
+# ANL:waggle-license
+import logging
+import os
+import os.path
+import re
+import subprocess
+import time
+import hashlib
+import json
+from pathlib import Path
+
+
+logger = logging.getLogger('registration-service')
+logger.setLevel(logging.INFO)
+
+cert_server = 'sage_registration@beekeeper'
+
+registration_key = '/etc/waggle/sage_registration'
+
+client_pub_file = '/etc/waggle/pubkey.pem'
+client_key_file = '/etc/waggle/key.pem'
+client_cert_file = '/etc/waggle/key.pem-cert'
+client_id_file = '/etc/waggle/node-id'
+
+
+def read_file(path):
+    return Path(path).read_text()
+
+
+def write_file(path, content):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    Path(path).write_text(content)
+
+
+def is_file_nonempty(path):
+    try:
+        return len(read_file(path)) > 0
+    except FileNotFoundError:
+        return False
+
+
+def run_registration_command(registration_key, cert_server, command):
+    return subprocess.check_output([
+        'ssh',
+        cert_server,
+        '-p', '20022',
+        '-i', registration_key,
+        command,
+    ]).decode()
+
+
+def make_request(command):
+    logger.info('Making request %s to %s.', command, cert_server)
+
+    start_time = time.time()
+
+    while time.time() - start_time < 300:
+        try:
+            response = run_registration_command(
+                registration_key, cert_server, command)
+            logger.debug('Response for %s:\n%s.', command, response)
+            return response
+        except subprocess.CalledProcessError:
+            logger.exception(
+                'Failed to get credentials from %s. Will retry in 30s...', cert_server)
+            time.sleep(30)
+
+    raise TimeoutError('Request timed out.')
+
+
+def request_node_info(node_id):
+    logger.info('Requesting node info from %s.', cert_server)
+
+    response = make_request('register {}'.format(node_id))
+
+    if 'cert file not found' in response:
+        raise ValueError('Certificate not found for {}.'.format(node_id))
+
+    return json.loads(response)
+
+
+def get_certificates():
+    logger.info('Getting credentials from %s.', cert_server)
+
+    # assumes eno1 is primary network interface
+    node_id = Path(
+        '/sys/class/net/eno1/address').read_text().strip().replace(':', '').rjust(16, '0')
+
+    required_files = [
+        client_id_file,
+        client_pub_file,
+        client_key_file,
+        client_cert_file,
+    ]
+
+    if all(is_file_nonempty(f) for f in required_files):
+        logger.info('Node already has all credentials. Skipping registration.')
+        return
+
+    while not all(is_file_nonempty(f) for f in required_files):
+        node_info = request_node_info(node_id)
+
+        write_file(client_pub_file, node_info['public_key'])
+        os.chmod(client_pub_file, 0o600)
+
+        write_file(client_id_file, node_info['id'])
+
+        write_file(client_cert_file, node_info['certificate'])
+        os.chmod(client_cert_file, 0o600)
+
+        write_file(client_key_file, node_info['private_key'])
+        os.chmod(client_key_file, 0o600)
+
+    #os.remove(registration_key)
+    logger.info('Registration complete')
+
+
+def main():
+    get_certificates()
+
+
+if __name__ == '__main__':
+    main()
