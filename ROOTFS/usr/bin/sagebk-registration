@@ -10,14 +10,21 @@ import os
 import os.path
 import re
 import subprocess
+import sys
 import time
 import hashlib
 import json
 from pathlib import Path
 
 
+formatter = logging.Formatter(
+    "%(asctime)s  [%(name)s:%(lineno)d] (%(levelname)s): %(message)s"
+)
+handler = logging.StreamHandler(stream=sys.stdout)
+handler.setFormatter(formatter)
 logger = logging.getLogger("registration-service")
 logger.setLevel(logging.INFO)
+logger.addHandler(handler)
 
 cert_server = "sage_registration@beekeeper"
 
