@@ -5,6 +5,7 @@
 #  license.  For more details on the Waggle project, visit:
 #           http://www.wa8.gl
 # ANL:waggle-license
+import configparser
 import logging
 import os
 import os.path
@@ -34,6 +35,10 @@ client_cert_file = "/etc/waggle/cert.pem"
 
 reverse_ssh_port_file = "/etc/waggle/reverse_ssh_port"
 token_path = "/etc/waggle/token"
+config_file = "/etc/sage/config.ini"
+
+backup_network_interfaces = ["eno1", "eth0"]
+default_node_id = "0000000000000001"
 
 
 def read_file(path):
@@ -177,17 +182,30 @@ def get_hostname():
     return ""
 
 
-def get_certificates():
-    logger.info("Getting credentials from %s.", cert_server)
+def generate_node_id(interface):
+    # test to see if the interface exists, if not fall-back to backup options
+    int_options = [interface] + backup_network_interfaces
+    for netint in int_options:
+        addrfile = Path("/sys/class/net/{}/address".format(netint))
+        if addrfile.is_file():
+            logger.info("Generating node-id from network interface [%s]", netint)
+            break
+        else:
+            addrfile = None
 
-    # assumes eno1 is primary network interface
-    node_id = (
-        Path("/sys/class/net/eno1/address")
-        .read_text()
-        .strip()
-        .replace(":", "")
-        .rjust(16, "0")
-    )
+    if not addrfile:
+        logger.warning(
+            "No network interface found for unique node-id, using default node-id [%s]",
+            default_node_id,
+        )
+        return default_node_id
+    else:
+        # generate the node id from the network interface mac address
+        return addrfile.read_text().strip().replace(":", "").rjust(16, "0")
+
+
+def get_certificates(node_id):
+    logger.info("Getting credentials from %s for node-id [%s].", cert_server, node_id)
 
     required_files = [
         ca_root_file,
@@ -222,7 +240,19 @@ def get_certificates():
 
 
 def main():
-    get_certificates()
+    try:
+        config = configparser.ConfigParser()
+        config.read(config_file)
+        netint = config["hardware"]["wlan-interface"]
+    except:
+        logger.warning(
+            "Config file [%s] not found, unable to load wlan network interface.",
+            config_file,
+        )
+        netint = None
+        pass
+
+    get_certificates(node_id=generate_node_id(netint))
 
 
 if __name__ == "__main__":
