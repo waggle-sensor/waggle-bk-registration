@@ -226,11 +226,9 @@ def get_certificates(node_id):
 
         write_file(client_cert_file, node_info["cert"])
         os.chmod(client_cert_file, 0o600)
-        subprocess.call(["chown", "rabbitmq:rabbitmq", client_cert_file])
 
         write_file(client_key_file, node_info["key"])
         os.chmod(client_key_file, 0o600)
-        subprocess.call(["chown", "rabbitmq:rabbitmq", client_key_file])
 
         write_file(reverse_ssh_port_file, str(node_info["ssh_port"]))
         write_file(token_path, node_info["token"])
