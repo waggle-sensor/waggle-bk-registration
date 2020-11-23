@@ -27,7 +27,8 @@ logger = logging.getLogger("registration-service")
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-cert_server = "sage_registration@beekeeper"
+#cert_server = "sage_registration@beekeeper"
+#cert_user = "sage_registration"
 
 registration_key = "/etc/waggle/sage_registration"
 
@@ -35,7 +36,7 @@ client_pub_file = "/etc/waggle/pubkey.pem"
 client_key_file = "/etc/waggle/key.pem"
 client_cert_file = "/etc/waggle/key.pem-cert"
 client_id_file = "/etc/waggle/node-id"
-config_file = "/etc/sage/config.ini"
+config_file = "/etc/waggle/config.ini"
 
 backup_network_interfaces = ["eno1", "eth0"]
 default_node_id = "0000000000000001"
@@ -57,13 +58,13 @@ def is_file_nonempty(path):
         return False
 
 
-def run_registration_command(registration_key, cert_server, command):
+def run_registration_command(registration_key, cert_user, cert_host, cert_port, command):
     return subprocess.check_output(
         [
             "ssh",
-            cert_server,
+            f'{cert_user}@{cert_host}',
             "-p",
-            "20022",
+            cert_port,
             "-i",
             registration_key,
             command,
@@ -71,35 +72,47 @@ def run_registration_command(registration_key, cert_server, command):
     ).decode()
 
 
-def make_request(command):
-    logger.info("Making request %s to %s.", command, cert_server)
+def make_request(command, cert_user, cert_host, cert_port):
+    logger.info("Making request %s to %s.", command, f'{cert_user}@{cert_host}:{cert_port}' )
 
     start_time = time.time()
 
     while time.time() - start_time < 300:
         try:
-            response = run_registration_command(registration_key, cert_server, command)
+            response = run_registration_command(registration_key, cert_user, cert_host, cert_port, command)
             logger.debug("Response for %s:\n%s.", command, response)
             return response
         except subprocess.CalledProcessError:
             logger.exception(
-                "Failed to get credentials from %s. Will retry in 30s...", cert_server
+                "Failed to get credentials from %s. Will retry in 30s...", cert_host
             )
             time.sleep(30)
 
     raise TimeoutError("Request timed out.")
 
 
-def request_node_info(node_id):
-    logger.info("Requesting node info from %s.", cert_server)
+def request_node_info(node_id, cert_user, cert_host, cert_port):
+    logger.info("Requesting node info from %s.", cert_host)
 
-    response = make_request("register {}".format(node_id))
+    response = make_request("register {}".format(node_id), cert_user, cert_host, cert_port)
 
     if "cert file not found" in response:
         raise ValueError("Certificate not found for {}.".format(node_id))
 
     return json.loads(response)
 
+def detect_default_route_interface():
+
+    result = subprocess.run(['ip', 'route',  'show' , 'default' ], stdout=subprocess.PIPE)
+    line = result.stdout.decode('utf-8')
+    line_array = line.split(' ')
+    predicted_device = line_array[4]
+
+    # TODO verify ?
+    logger.info(f"detected network device: {predicted_device}")
+
+    return predicted_device
+    # shell: ip route show default | awk '/default/ {print $5}'
 
 def generate_node_id(interface):
     # test to see if the interface exists, if not fall-back to backup options
@@ -123,8 +136,8 @@ def generate_node_id(interface):
         return addrfile.read_text().strip().replace(":", "").rjust(16, "0")
 
 
-def get_certificates(node_id):
-    logger.info("Getting credentials from %s for node-id [%s].", cert_server, node_id)
+def get_certificates(node_id, cert_user, cert_host, cert_port):
+    logger.info("Getting credentials from %s for node-id [%s].", cert_host, node_id)
 
     required_files = [
         client_id_file,
@@ -138,7 +151,7 @@ def get_certificates(node_id):
         return
 
     while not all(is_file_nonempty(f) for f in required_files):
-        node_info = request_node_info(node_id)
+        node_info = request_node_info(node_id, cert_user, cert_host, cert_port)
 
         write_file(client_pub_file, node_info["public_key"])
         os.chmod(client_pub_file, 0o600)
@@ -158,23 +171,48 @@ def get_certificates(node_id):
 def main():
     node_id_override = None
     netint = None
-    try:
-        config = configparser.ConfigParser()
-        config.read(config_file)
 
-        # load the potential config override node-id
-        if "system" in config:
-            node_id_override = config["system"].get("node-id-override")
+    beekeeper_registration_host = None
+    beekeeper_registration_port = None
 
-        # load the wlan interface used to dynamically generate the node-id
-        if "hardware" in config:
-            netint = config["hardware"].get("wlan-interface")
-    except:
-        logger.warning(
-            "Config file [%s] not found, unable to load wlan network interface.",
-            config_file,
-        )
-        pass
+    if not os.path.exists(config_file):
+        sys.exit(f'File {config_file} not found')
+
+
+    config = configparser.ConfigParser()
+    config.read(config_file)
+
+
+    if not "registration" in config:
+        sys.exit(f'Section "registration" missing config file')
+
+    registration_section = config["registration"]
+
+
+
+    if "system" in config:
+        system_section = config["system"]
+        node_id_override = system_section.get("node-id-override")
+
+    if "hardware" in config:
+        hardware_section = config["hardware"]
+        netint = hardware_section.get("network-interface")
+
+
+    beekeeper_registration_host = registration_section.get("host")
+    beekeeper_registration_port = registration_section.get("port")
+    beekeeper_registration_user = registration_section.get("user")
+
+    if not beekeeper_registration_host:
+        sys.exit('variable beekeeper-registration-host is not defined')
+
+    if not beekeeper_registration_port:
+        sys.exit('variable beekeeper-registration-port is not defined')
+
+    if not beekeeper_registration_user:
+        sys.exit('variable beekeeper-registration-user is not defined')
+
+
 
     if node_id_override:
         logger.info(
@@ -182,9 +220,17 @@ def main():
             node_id_override,
             config_file,
         )
-        get_certificates(node_id=node_id_override)
+        node_id = node_id_override
+        #get_certificates(node_id=node_id_override)
     else:
-        get_certificates(node_id=generate_node_id(netint))
+        #get_certificates(node_id=generate_node_id(netint))
+
+        if not netint:
+            netint = detect_default_route_interface()
+
+        node_id = generate_node_id(netint)
+    
+    get_certificates(node_id, beekeeper_registration_user, beekeeper_registration_host, beekeeper_registration_port)
 
 
 if __name__ == "__main__":
