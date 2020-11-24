@@ -139,6 +139,37 @@ def generate_node_id(interface):
 def get_certificates(node_id, cert_user, cert_host, cert_port):
     logger.info("Getting credentials from %s for node-id [%s].", cert_host, node_id)
 
+
+    while True:
+        try:
+            node_info = request_node_info(node_id, cert_user, cert_host, cert_port)
+
+            write_file(client_pub_file, node_info["public_key"])
+            os.chmod(client_pub_file, 0o600)
+
+            write_file(client_id_file, node_info["id"])
+
+            write_file(client_cert_file, node_info["certificate"])
+            os.chmod(client_cert_file, 0o600)
+
+            write_file(client_key_file, node_info["private_key"])
+            os.chmod(client_key_file, 0o600)
+
+        except Exception as e:
+            print("(get_certificates) error:", e)
+            time.sleep(30)
+            continue
+
+        break
+
+
+    # os.remove(registration_key)
+    logger.info("Registration complete")
+
+
+def main():
+
+
     required_files = [
         client_id_file,
         client_pub_file,
@@ -150,25 +181,8 @@ def get_certificates(node_id, cert_user, cert_host, cert_port):
         logger.info("Node already has all credentials. Skipping registration.")
         return
 
-    while not all(is_file_nonempty(f) for f in required_files):
-        node_info = request_node_info(node_id, cert_user, cert_host, cert_port)
-
-        write_file(client_pub_file, node_info["public_key"])
-        os.chmod(client_pub_file, 0o600)
-
-        write_file(client_id_file, node_info["id"])
-
-        write_file(client_cert_file, node_info["certificate"])
-        os.chmod(client_cert_file, 0o600)
-
-        write_file(client_key_file, node_info["private_key"])
-        os.chmod(client_key_file, 0o600)
-
-    # os.remove(registration_key)
-    logger.info("Registration complete")
 
 
-def main():
     node_id_override = None
     netint = None
 
@@ -221,9 +235,8 @@ def main():
             config_file,
         )
         node_id = node_id_override
-        #get_certificates(node_id=node_id_override)
+        
     else:
-        #get_certificates(node_id=generate_node_id(netint))
 
         if not netint:
             netint = detect_default_route_interface()
