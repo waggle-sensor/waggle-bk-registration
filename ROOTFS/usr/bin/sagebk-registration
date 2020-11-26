@@ -157,7 +157,7 @@ def get_certificates(node_id, cert_user, cert_host, cert_port):
             os.chmod(client_key_file, 0o600)
 
         except Exception as e:
-            logger.error("(get_certificates) error:", e)
+            logger.error(f"(get_certificates) error: {str(e)}")
             time.sleep(30)
             continue
 
