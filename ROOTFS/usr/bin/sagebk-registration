@@ -35,7 +35,7 @@ registration_key = "/etc/waggle/sage_registration"
 
 client_pub_file = "/etc/waggle/pubkey.pem"
 client_key_file = "/etc/waggle/key.pem"
-client_cert_file = "/etc/waggle/key.pem-cert"
+client_cert_file = "/etc/waggle/key.pem-cert.pub"
 client_id_file = "/etc/waggle/node-id"
 config_file = "/etc/waggle/config.ini"
 
@@ -60,6 +60,7 @@ def is_file_nonempty(path):
 
 
 def run_registration_command(registration_key, cert_user, cert_host, cert_port, command):
+    logger.info(f'executing: ssh {cert_user}@{cert_host} -p {cert_port} -i {registration_key} {command}')
     return subprocess.check_output(
         [
             "ssh",
