@@ -1,9 +1,0 @@
-#!/bin/bash
-
-case "${1}" in
-  configure)
-    echo "Enabling & starting sagebk-reverse-tunnel service"
-    systemctl enable sagebk-reverse-tunnel.service
-    systemctl start sagebk-reverse-tunnel.service || true
-    ;;
-esac
