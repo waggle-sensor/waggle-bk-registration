@@ -4,7 +4,7 @@ Description=Sage Beekeeper Registration
 [Service]
 Restart=always
 RestartSec=3min
-ExecStart=/usr/bin/sagebk-registration
+ExecStart=/usr/bin/waggle-registration.py
 
 [Install]
 WantedBy=multi-user.target

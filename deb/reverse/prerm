@@ -1,4 +1,0 @@
-#!/bin/bash
-
-systemctl stop sagebk-reverse-tunnel.service || true
-systemctl disable sagebk-reverse-tunnel.service || true
