@@ -16,7 +16,7 @@ import time
 import json
 from pathlib import Path
 #from kubernetes import client, config
-import kubernetes
+
 
 formatter = logging.Formatter(
     "%(asctime)s  [%(name)s:%(lineno)d] (%(levelname)s): %(message)s"
@@ -135,60 +135,7 @@ def get_certificates(node_id, cert_user, cert_host, cert_port):
     return node_info
 
 
-def updateConfigMap(node_id):
 
-    #KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-
-
-    kubernetes.config.load_kube_config(config_file="/etc/rancher/k3s/k3s.yaml")
-
-    configuration = kubernetes.client.Configuration()
-    api_instance = kubernetes.client.CoreV1Api(kubernetes.client.ApiClient(configuration))
-
-
-
-    metadata = kubernetes.client.V1ObjectMeta(
-        name="waggle-config"
-    )
-
-    configmap = kubernetes.client.V1ConfigMap(
-        api_version="v1",
-        kind="ConfigMap",
-        data=dict(WAGGLE_NODE_ID = node_id),
-        metadata=metadata
-    )
-
-    v1 = kubernetes.client.CoreV1Api()    
-    
-    try:
-        cm = v1.read_namespaced_config_map("waggle-config", "default")
-    except kubernetes.client.exceptions.ApiException:
-        cm = None
-        
-
-    #print(cm)
-    if cm: 
-        if cm.data["WAGGLE_NODE_ID"] == node_id :
-            logger.info("ConfigMap is already up-to-date")
-            return
-
-        api_response = v1.replace_namespaced_config_map(
-            name="waggle-config",
-            namespace="default",
-            body=configmap,
-            pretty = 'pretty_example',
-        )
-        logger.info("Reloaded ConfigMap with new value")
-        return
-
-   
-    api_response = v1.create_namespaced_config_map(
-            namespace="default",
-            body=configmap,
-            pretty = 'pretty_example',
-        )
-    logger.info("Loaded ConfigMap")
-    return
     
 
 
@@ -212,16 +159,10 @@ def main():
     
     if all(is_file_nonempty(f) for f in required_files):
         logger.info("Node already has all credentials. Skipping registration.")
-
-        #node_id = read_file(client_id_file)
-        #updateConfigMap(node_id)
-
-        return
+        sys.exit(0)
 
 
 
-    #beekeeper_registration_host = None
-    #beekeeper_registration_port = None
 
     if not os.path.exists(config_file):
         sys.exit(f'File {config_file} not found')
@@ -261,10 +202,7 @@ def main():
     
     node_info = get_certificates(node_id, beekeeper_registration_user, beekeeper_registration_host, beekeeper_registration_port)
 
-    # load info into ConfigMap
-    #node_id = node_info["id"]
 
-    #updateConfigMap(node_id)
 
 
 
