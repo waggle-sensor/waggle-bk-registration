@@ -38,13 +38,3 @@ jobs:
           asset_path: ./${{ steps.build_project.outputs.deb_reg }}
           asset_name: ${{ steps.build_project.outputs.deb_reg }}
           asset_content_type: application/vnd.debian.binary-package
-      - name: Upload Release Asset (Reverse Tunnel)
-        id: upload-release-asset-reverse
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ steps.build_project.outputs.deb_reverse }}
-          asset_name: ${{ steps.build_project.outputs.deb_reverse }}
-          asset_content_type: application/vnd.debian.binary-package
