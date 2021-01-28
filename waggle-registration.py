@@ -203,7 +203,7 @@ def main():
         client_cert_file,
     ]
 
-    if not path.exists(client_id_file):
+    if not os.path.exists(client_id_file):
         sys.exit(f"File {client_id_file} missing.")
 
     node_id = read_file(client_id_file)
