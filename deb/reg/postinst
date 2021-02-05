@@ -4,6 +4,5 @@ case "${1}" in
   configure)
     echo "Enabling & starting waggle-registration service"
     systemctl enable waggle-registration.service
-    systemctl start waggle-registration.service || true
     ;;
 esac
