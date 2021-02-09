@@ -5,6 +5,5 @@ Service running on the nodes that registers with beekeeper and downloads credent
 
 # create deb package
 ```bash
-./release.sh
+./build.sh
 ```
-Note: Under OSX this script will automatically use Docker.  
