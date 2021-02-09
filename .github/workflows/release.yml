@@ -16,7 +16,7 @@ jobs:
       - name: Build project
         id: build_project
         run: |
-          ./release.sh
+          ./build.sh
           echo "##[set-output name=deb_reg;]$(ls waggle-registration*.deb)"
       - name: Create Release
         id: create_release
