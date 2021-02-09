@@ -15,8 +15,10 @@ import sys
 import time
 import json
 from pathlib import Path
+import click
 #from kubernetes import client, config
 
+software_version = "{{VERSION}}"
 
 formatter = logging.Formatter(
     "%(asctime)s  [%(name)s:%(lineno)d] (%(levelname)s): %(message)s"
@@ -136,10 +138,11 @@ def get_certificates(node_id, cert_user, cert_host, cert_port):
 
 
 
-    
 
 
 
+@click.command()
+@click.version_option(version=software_version, message=f'version: %(version)s')
 def main():
 
 
@@ -156,7 +159,7 @@ def main():
     node_id = read_file(client_id_file)
     if not node_id:
         sys.exit(f"File {client_id_file} empty.")
-    
+
     if all(is_file_nonempty(f) for f in required_files):
         logger.info("Node already has all credentials. Skipping registration.")
         sys.exit(0)
@@ -181,7 +184,7 @@ def main():
 
     if "system" in config:
         system_section = config["system"]
-        
+
 
 
 
@@ -199,7 +202,7 @@ def main():
         sys.exit('variable beekeeper-registration-user is not defined')
 
 
-    
+
     node_info = get_certificates(node_id, beekeeper_registration_user, beekeeper_registration_host, beekeeper_registration_port)
 
 
