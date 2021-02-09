@@ -38,9 +38,9 @@ if [[ -z "${FORCE}" && "${TAG_DEPTH}_" != "0_" ]]; then
   exit 1
 fi
 
-docker build -t waggle_nodeid_build .
+docker build -t waggle_registration_build .
 docker run --rm \
   -v `pwd`:/output/ \
   -e VERSION_SHORT=$VERSION_SHORT \
   -e VERSION_LONG=$VERSION_LONG \
-  waggle_nodeid_build ./create_deb.sh
+  waggle_registration_build ./create_deb.sh
