@@ -35,7 +35,7 @@ client_cert_file = "/etc/waggle/cert.pem"
 
 reverse_ssh_port_file = "/etc/waggle/reverse_ssh_port"
 token_path = "/etc/waggle/token"
-config_file = "/etc/sage/config.ini"
+config_file = "/etc/waggle/config.ini"
 
 backup_network_interfaces = ["eno1", "eth0"]
 default_node_id = "0000000000000001"
