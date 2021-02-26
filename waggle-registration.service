@@ -10,6 +10,7 @@ ExecStart=/usr/bin/waggle-registration.py
 #RemainAfterExit=yes
 Restart=on-failure
 RestartSec=30
+RuntimeMaxSec=60
 
 [Install]
 WantedBy=default.target
