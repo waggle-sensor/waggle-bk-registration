@@ -1,6 +1,7 @@
 [Unit]
 Description=Sage Beekeeper Registration
 After=waggle-nodeid.service
+Wants=waggle-nodeid.service
 
 [Service]
 ExecStartPre=/usr/bin/test -f /etc/waggle/node-id
