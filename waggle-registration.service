@@ -1,6 +1,7 @@
 [Unit]
 Description=Sage Beekeeper Registration
 After=waggle-nodeid.service
+Wants=waggle-nodeid.service
 
 [Service]
 ExecStartPre=/usr/bin/test -f /etc/waggle/node-id
@@ -9,6 +10,7 @@ ExecStart=/usr/bin/waggle-registration.py
 #RemainAfterExit=yes
 Restart=on-failure
 RestartSec=30
+RuntimeMaxSec=60
 
 [Install]
 WantedBy=default.target
