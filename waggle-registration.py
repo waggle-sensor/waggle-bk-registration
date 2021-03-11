@@ -30,9 +30,6 @@ logger = logging.getLogger("registration-service")
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-# cert_server = "sage_registration@beekeeper"
-# cert_user = "sage_registration"
-
 registration_key = "/etc/waggle/sage_registration"
 
 client_pub_file = "/etc/waggle/pubkey.pem"
@@ -40,9 +37,6 @@ client_key_file = "/etc/waggle/key.pem"
 client_cert_file = "/etc/waggle/key.pem-cert.pub"
 client_id_file = "/etc/waggle/node-id"
 config_file = "/etc/waggle/config.ini"
-
-backup_network_interfaces = ["eno1", "eth0"]
-default_node_id = "0000000000000001"
 
 
 def read_file(path):
