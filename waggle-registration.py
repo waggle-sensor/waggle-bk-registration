@@ -16,7 +16,8 @@ import time
 import json
 from pathlib import Path
 import click
-#from kubernetes import client, config
+
+# from kubernetes import client, config
 
 software_version = "{{VERSION}}"
 
@@ -29,8 +30,8 @@ logger = logging.getLogger("registration-service")
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-#cert_server = "sage_registration@beekeeper"
-#cert_user = "sage_registration"
+# cert_server = "sage_registration@beekeeper"
+# cert_user = "sage_registration"
 
 registration_key = "/etc/waggle/sage_registration"
 
@@ -60,12 +61,16 @@ def is_file_nonempty(path):
         return False
 
 
-def run_registration_command(registration_key, cert_user, cert_host, cert_port, command):
-    logger.info(f'executing: ssh {cert_user}@{cert_host} -p {cert_port} -i {registration_key} {command}')
+def run_registration_command(
+    registration_key, cert_user, cert_host, cert_port, command
+):
+    logger.info(
+        f"executing: ssh {cert_user}@{cert_host} -p {cert_port} -i {registration_key} {command}"
+    )
     return subprocess.check_output(
         [
             "ssh",
-            f'{cert_user}@{cert_host}',
+            f"{cert_user}@{cert_host}",
             "-p",
             cert_port,
             "-i",
@@ -76,13 +81,17 @@ def run_registration_command(registration_key, cert_user, cert_host, cert_port, 
 
 
 def make_request(command, cert_user, cert_host, cert_port):
-    logger.info("Making request %s to %s.", command, f'{cert_user}@{cert_host}:{cert_port}' )
+    logger.info(
+        "Making request %s to %s.", command, f"{cert_user}@{cert_host}:{cert_port}"
+    )
 
     start_time = time.time()
 
     while time.time() - start_time < 300:
         try:
-            response = run_registration_command(registration_key, cert_user, cert_host, cert_port, command)
+            response = run_registration_command(
+                registration_key, cert_user, cert_host, cert_port, command
+            )
             logger.debug("Response for %s:\n%s.", command, response)
             return response
         except subprocess.CalledProcessError:
@@ -97,14 +106,14 @@ def make_request(command, cert_user, cert_host, cert_port):
 def request_node_info(node_id, cert_user, cert_host, cert_port):
     logger.info("Requesting node info from %s.", cert_host)
 
-    response = make_request("register {}".format(node_id), cert_user, cert_host, cert_port)
+    response = make_request(
+        "register {}".format(node_id), cert_user, cert_host, cert_port
+    )
 
     if "cert file not found" in response:
         raise ValueError("Certificate not found for {}.".format(node_id))
 
     return json.loads(response)
-
-
 
 
 def get_certificates(node_id, cert_user, cert_host, cert_port):
@@ -131,20 +140,14 @@ def get_certificates(node_id, cert_user, cert_host, cert_port):
 
         break
 
-
     # os.remove(registration_key)
     logger.info("Registration complete")
     return node_info
 
 
-
-
-
-
 @click.command()
-@click.version_option(version=software_version, message=f'version: %(version)s')
+@click.version_option(version=software_version, message=f"version: %(version)s")
 def main():
-
 
     required_files = [
         client_id_file,
@@ -164,49 +167,39 @@ def main():
         logger.info("Node already has all credentials. Skipping registration.")
         sys.exit(0)
 
-
-
-
     if not os.path.exists(config_file):
-        sys.exit(f'File {config_file} not found')
-
+        sys.exit(f"File {config_file} not found")
 
     config = configparser.ConfigParser()
     config.read(config_file)
-
 
     if not "registration" in config:
         sys.exit(f'Section "registration" missing config file')
 
     registration_section = config["registration"]
 
-
-
     if "system" in config:
         system_section = config["system"]
-
-
-
 
     beekeeper_registration_host = registration_section.get("host")
     beekeeper_registration_port = registration_section.get("port")
     beekeeper_registration_user = registration_section.get("user")
 
     if not beekeeper_registration_host:
-        sys.exit('variable beekeeper-registration-host is not defined')
+        sys.exit("variable beekeeper-registration-host is not defined")
 
     if not beekeeper_registration_port:
-        sys.exit('variable beekeeper-registration-port is not defined')
+        sys.exit("variable beekeeper-registration-port is not defined")
 
     if not beekeeper_registration_user:
-        sys.exit('variable beekeeper-registration-user is not defined')
+        sys.exit("variable beekeeper-registration-user is not defined")
 
-
-
-    node_info = get_certificates(node_id, beekeeper_registration_user, beekeeper_registration_host, beekeeper_registration_port)
-
-
-
+    node_info = get_certificates(
+        node_id,
+        beekeeper_registration_user,
+        beekeeper_registration_host,
+        beekeeper_registration_port,
+    )
 
 
 if __name__ == "__main__":
