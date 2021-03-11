@@ -30,8 +30,6 @@ logger = logging.getLogger("registration-service")
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-registration_key = "/etc/waggle/sage_registration"
-
 client_pub_file = "/etc/waggle/pubkey.pem"
 client_key_file = "/etc/waggle/key.pem"
 client_cert_file = "/etc/waggle/key.pem-cert.pub"
@@ -74,7 +72,7 @@ def run_registration_command(
     ).decode()
 
 
-def make_request(command, cert_user, cert_host, cert_port):
+def make_request(command, cert_user, cert_host, cert_port, key):
     logger.info(
         "Making request %s to %s.", command, f"{cert_user}@{cert_host}:{cert_port}"
     )
@@ -84,7 +82,7 @@ def make_request(command, cert_user, cert_host, cert_port):
     while time.time() - start_time < 300:
         try:
             response = run_registration_command(
-                registration_key, cert_user, cert_host, cert_port, command
+                key, cert_user, cert_host, cert_port, command
             )
             logger.debug("Response for %s:\n%s.", command, response)
             return response
@@ -97,11 +95,11 @@ def make_request(command, cert_user, cert_host, cert_port):
     raise TimeoutError("Request timed out.")
 
 
-def request_node_info(node_id, cert_user, cert_host, cert_port):
+def request_node_info(node_id, cert_user, cert_host, cert_port, key):
     logger.info("Requesting node info from %s.", cert_host)
 
     response = make_request(
-        "register {}".format(node_id), cert_user, cert_host, cert_port
+        "register {}".format(node_id), cert_user, cert_host, cert_port, key
     )
 
     if "cert file not found" in response:
@@ -110,13 +108,13 @@ def request_node_info(node_id, cert_user, cert_host, cert_port):
     return json.loads(response)
 
 
-def get_certificates(node_id, cert_user, cert_host, cert_port):
+def get_certificates(node_id, cert_user, cert_host, cert_port, key):
     logger.info("Getting credentials from %s for node-id [%s].", cert_host, node_id)
 
     node_info = None
     while True:
         try:
-            node_info = request_node_info(node_id, cert_user, cert_host, cert_port)
+            node_info = request_node_info(node_id, cert_user, cert_host, cert_port, key)
 
             write_file(client_pub_file, node_info["public_key"])
             os.chmod(client_pub_file, 0o600)
@@ -134,7 +132,7 @@ def get_certificates(node_id, cert_user, cert_host, cert_port):
 
         break
 
-    # os.remove(registration_key)
+    # os.remove(key) & the cert ? how do know cert name
     logger.info("Registration complete")
     return node_info
 
@@ -178,6 +176,7 @@ def main():
     beekeeper_registration_host = registration_section.get("host")
     beekeeper_registration_port = registration_section.get("port")
     beekeeper_registration_user = registration_section.get("user")
+    beekeeper_registration_privkey = registration_section.get("priv-key")
 
     if not beekeeper_registration_host:
         sys.exit("variable beekeeper-registration-host is not defined")
@@ -188,11 +187,15 @@ def main():
     if not beekeeper_registration_user:
         sys.exit("variable beekeeper-registration-user is not defined")
 
+    if not beekeeper_registration_privkey:
+        sys.exit("variable beekeeper_registration_privkey is not defined")
+
     node_info = get_certificates(
         node_id,
         beekeeper_registration_user,
         beekeeper_registration_host,
         beekeeper_registration_port,
+        beekeeper_registration_privkey,
     )
 
 
