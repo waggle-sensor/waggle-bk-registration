@@ -175,7 +175,7 @@ def main():
 
     beekeeper_registration_host = registration_section.get("host")
     beekeeper_registration_port = registration_section.get("port")
-    beekeeper_registration_user = registration_section.get("user")
+    beekeeper_registration_user = registration_section.get("user", "sage_registration")
     beekeeper_registration_privkey = registration_section.get("priv-key")
 
     if not beekeeper_registration_host:
