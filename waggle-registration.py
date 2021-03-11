@@ -30,11 +30,8 @@ logger = logging.getLogger("registration-service")
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-client_pub_file = "/etc/waggle/pubkey.pem"
-client_key_file = "/etc/waggle/key.pem"
-client_cert_file = "/etc/waggle/key.pem-cert.pub"
-client_id_file = "/etc/waggle/node-id"
 config_file = "/etc/waggle/config.ini"
+client_cert_suffix = "-cert.pub"
 
 
 def read_file(path):
@@ -141,60 +138,77 @@ def get_certificates(node_id, cert_user, cert_host, cert_port, key):
 @click.version_option(version=software_version, message=f"version: %(version)s")
 def main():
 
-    required_files = [
-        client_pub_file,
-        client_key_file,
-        client_cert_file,
-    ]
-
-    if not os.path.exists(client_id_file):
-        sys.exit(f"File {client_id_file} missing.")
-
-    node_id = read_file(client_id_file)
-    if not node_id:
-        sys.exit(f"File {client_id_file} empty.")
-
-    if all(is_file_nonempty(f) for f in required_files):
-        logger.info("Node already has all credentials. Skipping registration.")
-        sys.exit(0)
-
     if not os.path.exists(config_file):
         sys.exit(f"File {config_file} not found")
 
     config = configparser.ConfigParser()
     config.read(config_file)
 
+    # load reverse-tunnel specific variables
+    if not "reverse-tunnel" in config:
+        sys.exit(f"Section 'reverse-tunnel' missing in config file [{config_file}]")
+
+    client_pub_file = config["reverse-tunnel"].get("pubkey")
+    client_key_file = config["reverse-tunnel"].get("key", "")
+    client_cert_file = f"{client_key_file}{client_cert_suffix}"
+
+    if not client_pub_file:
+        sys.exit("variable client_pub_file is not defined")
+
+    if not client_key_file:
+        sys.exit("variable client_key_file is not defined")
+
+    # check if registration is needed
+    required_files = [
+        client_pub_file,
+        client_key_file,
+        client_cert_file,
+    ]
+
+    if all(is_file_nonempty(f) for f in required_files):
+        logger.info("Node already has all credentials. Skipping registration.")
+        sys.exit(0)
+
+    # load registration specific variables
     if not "registration" in config:
-        sys.exit(f'Section "registration" missing config file')
+        sys.exit(f"Section 'registration' missing in config file [{config_file}]")
 
-    registration_section = config["registration"]
+    beekeeper_reg_host = config["registration"].get("host")
+    beekeeper_reg_port = config["registration"].get("port")
+    beekeeper_reg_user = config["registration"].get("user", "sage_registration")
+    beekeeper_reg_privkey = config["registration"].get("priv-key")
 
-    if "system" in config:
-        system_section = config["system"]
+    if not beekeeper_reg_host:
+        sys.exit("variable beekeeper_reg_host is not defined")
 
-    beekeeper_registration_host = registration_section.get("host")
-    beekeeper_registration_port = registration_section.get("port")
-    beekeeper_registration_user = registration_section.get("user", "sage_registration")
-    beekeeper_registration_privkey = registration_section.get("priv-key")
+    if not beekeeper_reg_port:
+        sys.exit("variable beekeeper_reg_port is not defined")
 
-    if not beekeeper_registration_host:
-        sys.exit("variable beekeeper-registration-host is not defined")
+    if not beekeeper_reg_user:
+        sys.exit("variable beekeeper_reg_user is not defined")
 
-    if not beekeeper_registration_port:
-        sys.exit("variable beekeeper-registration-port is not defined")
+    if not beekeeper_reg_privkey:
+        sys.exit("variable beekeeper_reg_privkey is not defined")
 
-    if not beekeeper_registration_user:
-        sys.exit("variable beekeeper-registration-user is not defined")
+    if not "system" in config:
+        sys.exit(f"Section 'system' missing in config file [{config_file}]")
 
-    if not beekeeper_registration_privkey:
-        sys.exit("variable beekeeper_registration_privkey is not defined")
+    client_id_file = config["system"].get("nodeid-file")
 
+    if not os.path.exists(client_id_file):
+        sys.exit(f"Client node ID file {client_id_file} missing.")
+
+    node_id = read_file(client_id_file)
+    if not node_id:
+        sys.exit(f"Client node ID file {client_id_file} empty.")
+
+    # initiate registration
     node_info = get_certificates(
         node_id,
-        beekeeper_registration_user,
-        beekeeper_registration_host,
-        beekeeper_registration_port,
-        beekeeper_registration_privkey,
+        beekeeper_reg_user,
+        beekeeper_reg_host,
+        beekeeper_reg_port,
+        beekeeper_reg_privkey,
     )
 
 
