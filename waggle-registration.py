@@ -142,7 +142,6 @@ def get_certificates(node_id, cert_user, cert_host, cert_port, key):
 def main():
 
     required_files = [
-        client_id_file,
         client_pub_file,
         client_key_file,
         client_cert_file,
