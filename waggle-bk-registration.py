@@ -52,26 +52,26 @@ def is_file_nonempty(path):
 
 
 def run_registration_command(
-    registration_key, cert_user, cert_host, cert_port, command
+    reg_key, reg_key_cert, cert_user, cert_host, cert_port, command
 ):
-    logger.info(
-        f"executing: ssh {cert_user}@{cert_host} -p {cert_port} -i {registration_key} {command}"
-    )
-    return subprocess.check_output(
-        [
-            "ssh",
-            "-vv",
-            f"{cert_user}@{cert_host}",
-            "-p",
-            cert_port,
-            "-i",
-            registration_key,
-            command,
-        ]
-    ).decode()
+    command = [
+        "ssh",
+        "-vv",
+        f"{cert_user}@{cert_host}",
+        "-p",
+        cert_port,
+        "-i",
+        reg_key,
+        "-o",
+        f"CertificateFile={reg_key_cert}",
+        command,
+    ]
+
+    logger.info(f"executing: {' '.join(command)}")
+    return subprocess.check_output(command).decode()
 
 
-def make_request(command, cert_user, cert_host, cert_port, key):
+def make_request(command, cert_user, cert_host, cert_port, key, key_cert):
     logger.info(
         "Making request %s to %s.", command, f"{cert_user}@{cert_host}:{cert_port}"
     )
@@ -81,7 +81,7 @@ def make_request(command, cert_user, cert_host, cert_port, key):
     while time.time() - start_time < 300:
         try:
             response = run_registration_command(
-                key, cert_user, cert_host, cert_port, command
+                key, key_cert, cert_user, cert_host, cert_port, command
             )
             logger.debug("Response for %s:\n%s.", command, response)
             return response
@@ -94,11 +94,11 @@ def make_request(command, cert_user, cert_host, cert_port, key):
     raise TimeoutError("Request timed out.")
 
 
-def request_node_info(node_id, cert_user, cert_host, cert_port, key):
+def request_node_info(node_id, cert_user, cert_host, cert_port, key, key_cert):
     logger.info("Requesting node info from %s.", cert_host)
 
     response = make_request(
-        "register {}".format(node_id), cert_user, cert_host, cert_port, key
+        "register {}".format(node_id), cert_user, cert_host, cert_port, key, key_cert
     )
 
     if "cert file not found" in response:
@@ -113,6 +113,7 @@ def get_certificates(
     cert_host,
     cert_port,
     key,
+    key_cert,
     client_pub_file,
     client_key_file,
     client_cert_file,
@@ -122,7 +123,9 @@ def get_certificates(
     node_info = None
     while True:
         try:
-            node_info = request_node_info(node_id, cert_user, cert_host, cert_port, key)
+            node_info = request_node_info(
+                node_id, cert_user, cert_host, cert_port, key, key_cert
+            )
 
             write_file(client_pub_file, node_info["public_key"])
             os.chmod(client_pub_file, 0o600)
@@ -140,7 +143,8 @@ def get_certificates(
 
         break
 
-    # os.remove(key) & the cert ? how do know cert name
+    os.remove(key)
+    os.remove(key_cert)
     logger.info("Registration complete")
     return node_info
 
@@ -188,6 +192,7 @@ def main():
     beekeeper_reg_port = config["registration"].get("port")
     beekeeper_reg_user = config["registration"].get("user", "sage_registration")
     beekeeper_reg_privkey = config["registration"].get("key")
+    beekeeper_reg_keycert = config["registration"].get("keycert")
 
     if not beekeeper_reg_host:
         sys.exit("variable beekeeper_reg_host is not defined")
@@ -200,6 +205,9 @@ def main():
 
     if not beekeeper_reg_privkey:
         sys.exit("variable beekeeper_reg_privkey is not defined")
+
+    if not beekeeper_reg_keycert:
+        sys.exit("variable beekeeper_reg_keycert is not defined")
 
     # get the node ID
     if not os.path.exists(client_id_file):
@@ -216,6 +224,7 @@ def main():
         beekeeper_reg_host,
         beekeeper_reg_port,
         beekeeper_reg_privkey,
+        beekeeper_reg_keycert,
         client_pub_file,
         client_key_file,
         client_cert_file,
