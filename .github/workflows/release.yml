@@ -17,7 +17,7 @@ jobs:
         id: build_project
         run: |
           ./build.sh
-          echo "##[set-output name=deb_reg;]$(ls waggle-registration*.deb)"
+          echo "##[set-output name=deb_reg;]$(ls waggle-bk-registration*.deb)"
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
