@@ -60,6 +60,7 @@ def run_registration_command(
     return subprocess.check_output(
         [
             "ssh",
+            "-vv",
             f"{cert_user}@{cert_host}",
             "-p",
             cert_port,
