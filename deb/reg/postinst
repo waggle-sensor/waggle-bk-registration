@@ -2,7 +2,7 @@
 
 case "${1}" in
   configure)
-    echo "Enabling & starting waggle-registration service"
-    systemctl enable waggle-registration.service
+    echo "Enabling & starting waggle-bk-registration service"
+    systemctl enable waggle-bk-registration.service
     ;;
 esac

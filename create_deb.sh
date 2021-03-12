@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 BASEDIR=$(mktemp -d)
-NAME=waggle-registration
+NAME=waggle-bk-registration
 ARCH=all
 
 # add package description
@@ -10,7 +10,7 @@ cat <<EOF > ${BASEDIR}/DEBIAN/control
 Package: ${NAME}
 Version: ${VERSION_LONG}
 Maintainer: sagecontinuum.org
-Description: Register with Beehive server
+Description: Register with Beekeeper server
 Architecture: ${ARCH}
 Priority: optional
 Depends: python3-click
@@ -25,11 +25,11 @@ mkdir -p ${BASEDIR}/usr/bin
 
 # add core files
 
-cp -p waggle-registration.service ${BASEDIR}/etc/systemd/system/
-cp -p waggle-registration.py ${BASEDIR}/usr/bin
+cp -p waggle-bk-registration.service ${BASEDIR}/etc/systemd/system/
+cp -p waggle-bk-registration.py ${BASEDIR}/usr/bin
 
-sed -e "s/{{VERSION}}/${VERSION_LONG}/; w ${BASEDIR}/usr/bin/waggle-registration.py" ./waggle-registration.py
-chmod +x ${BASEDIR}/usr/bin/waggle-registration.py
+sed -e "s/{{VERSION}}/${VERSION_LONG}/; w ${BASEDIR}/usr/bin/waggle-bk-registration.py" ./waggle-bk-registration.py
+chmod +x ${BASEDIR}/usr/bin/waggle-bk-registration.py
 
 # build deb
 dpkg-deb --root-owner-group --build ${BASEDIR} "${NAME}_${VERSION_SHORT}_${ARCH}.deb"
