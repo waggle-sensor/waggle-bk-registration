@@ -10,15 +10,10 @@ import json
 import logging
 import os
 import os.path
-import re
 import subprocess
 import sys
 import time
 from pathlib import Path
-
-import click
-
-software_version = "{{VERSION}}"
 
 formatter = logging.Formatter("%(asctime)s  [%(name)s:%(lineno)d] (%(levelname)s): %(message)s")
 handler = logging.StreamHandler(stream=sys.stdout)
@@ -138,8 +133,6 @@ def get_certificates(
     return node_info
 
 
-@click.command()
-@click.version_option(version=software_version, message=f"version: %(version)s")
 def main():
 
     if not os.path.exists(config_file):
