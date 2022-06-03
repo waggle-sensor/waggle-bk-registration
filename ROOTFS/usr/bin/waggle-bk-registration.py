@@ -6,6 +6,7 @@
 #           http://www.wa8.gl
 # ANL:waggle-license
 import configparser
+import json
 import logging
 import os
 import os.path
@@ -13,17 +14,15 @@ import re
 import subprocess
 import sys
 import time
-import json
 from pathlib import Path
+
 import click
 
 # from kubernetes import client, config
 
 software_version = "{{VERSION}}"
 
-formatter = logging.Formatter(
-    "%(asctime)s  [%(name)s:%(lineno)d] (%(levelname)s): %(message)s"
-)
+formatter = logging.Formatter("%(asctime)s  [%(name)s:%(lineno)d] (%(levelname)s): %(message)s")
 handler = logging.StreamHandler(stream=sys.stdout)
 handler.setFormatter(formatter)
 logger = logging.getLogger("registration-service")
@@ -51,9 +50,7 @@ def is_file_nonempty(path):
         return False
 
 
-def run_registration_command(
-    reg_key, reg_key_cert, cert_user, cert_host, cert_port, command
-):
+def run_registration_command(reg_key, reg_key_cert, cert_user, cert_host, cert_port, command):
     command = [
         "ssh",
         "-vv",
@@ -72,9 +69,7 @@ def run_registration_command(
 
 
 def make_request(command, cert_user, cert_host, cert_port, key, key_cert):
-    logger.info(
-        "Making request %s to %s.", command, f"{cert_user}@{cert_host}:{cert_port}"
-    )
+    logger.info("Making request %s to %s.", command, f"{cert_user}@{cert_host}:{cert_port}")
 
     start_time = time.time()
 
@@ -86,9 +81,7 @@ def make_request(command, cert_user, cert_host, cert_port, key, key_cert):
             logger.debug("Response for %s:\n%s.", command, response)
             return response
         except subprocess.CalledProcessError:
-            logger.exception(
-                "Failed to get credentials from %s. Will retry in 30s...", cert_host
-            )
+            logger.exception("Failed to get credentials from %s. Will retry in 30s...", cert_host)
             time.sleep(30)
 
     raise TimeoutError("Request timed out.")
@@ -123,9 +116,7 @@ def get_certificates(
     node_info = None
     while True:
         try:
-            node_info = request_node_info(
-                node_id, cert_user, cert_host, cert_port, key, key_cert
-            )
+            node_info = request_node_info(node_id, cert_user, cert_host, cert_port, key, key_cert)
 
             write_file(client_pub_file, node_info["public_key"])
             os.chmod(client_pub_file, 0o600)
