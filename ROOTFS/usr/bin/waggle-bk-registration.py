@@ -18,8 +18,6 @@ from pathlib import Path
 
 import click
 
-# from kubernetes import client, config
-
 software_version = "{{VERSION}}"
 
 formatter = logging.Formatter("%(asctime)s  [%(name)s:%(lineno)d] (%(levelname)s): %(message)s")

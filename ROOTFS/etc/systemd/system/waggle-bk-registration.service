@@ -6,8 +6,6 @@ Wants=waggle-nodeid.service
 [Service]
 ExecStartPre=/usr/bin/test -f /etc/waggle/node-id
 ExecStart=/usr/bin/waggle-bk-registration.py
-#Type=oneshot # requires systemd >= 244
-#RemainAfterExit=yes
 Restart=on-failure
 RestartSec=30
 RuntimeMaxSec=60
