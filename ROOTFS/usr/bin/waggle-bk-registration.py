@@ -195,7 +195,7 @@ def main():
     if not os.path.exists(client_id_file):
         sys.exit(f"Client node ID file {client_id_file} missing.")
 
-    node_id = read_file(client_id_file)
+    node_id = read_file(client_id_file).strip()
     if not node_id:
         sys.exit(f"Client node ID file {client_id_file} empty.")
 
